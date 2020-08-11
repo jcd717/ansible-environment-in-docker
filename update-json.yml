@@ -1,0 +1,24 @@
+- hosts: localhost
+  vars: 
+    fileName: daemon.json
+  gather_facts: no
+  tasks:
+    - name: créer le fichier s'il n'existe pas
+      copy:
+        content: "{}"
+        dest: "{{fileName}}"
+        force: false
+
+    - slurp:
+        src: "{{fileName}}"
+      register: json
+    - name: contenu actuel du fichier {{fileName}}
+      debug:
+        msg: "{{ json['content'] | b64decode }}"
+    - name: ajouter/modifier des données au contenu JSON 
+      set_fact:
+        json: "{{ json['content'] | b64decode | from_json | default([]) | combine({ 'insecure-registries': ['registry.test.lan:5000']}) }}"
+    - copy:
+        content: "{{ json | to_nice_json }}" 
+        dest: "{{fileName}}"
+        
